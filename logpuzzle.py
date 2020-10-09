@@ -14,6 +14,8 @@ HTTP/1.0" 302 528 "-" "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US;
 rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6"
 """
 
+__author__ = "Leann James with help from Jordan Haagenson"
+
 import os
 import re
 import sys
@@ -27,7 +29,22 @@ def read_urls(filename):
     alphabetically in increasing order, and screening out duplicates.
     """
     # +++your code here+++
-    pass
+    animal_pattern = r'GET (\S*puzzle\S*)'
+    places_pattern = r'GET (\S*puzzle/\w-\w{4}-\w{4}\S*)'
+    puzzle_pieces = []
+    with open(filename, 'r') as f:
+        file_read = f.read()
+        if re.search(places_pattern, file_read) is not None:
+            matches = re.findall(places_pattern, file_read)
+            matches = sorted(matches, key=lambda x: x[-8:-4])
+        else:
+            matches = re.findall(animal_pattern, file_read)
+            matches = sorted(matches)
+        matches = ['http://code.google.com' + match for match in matches]
+        for url in matches:
+            if url not in puzzle_pieces:
+                puzzle_pieces.append(url)
+        return puzzle_pieces
 
 
 def download_images(img_urls, dest_dir):
@@ -38,8 +55,16 @@ def download_images(img_urls, dest_dir):
     to show each local image file.
     Creates the directory if necessary.
     """
-    # +++your code here+++
-    pass
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir)
+    with open(f'{dest_dir}/index.html', 'w') as html:
+        html.write('<body>')
+        for url in enumerate(img_urls):
+            with open(f'{dest_dir}/img{str(url[0])}.jpg', 'wb'):
+                filename = f'{dest_dir}/img{str(url[0])}.jpg'
+                urllib.request.urlretrieve(url[1], filename)
+            html.write(f'<img src="img{str(url[0])}.jpg">')
+        html.write('\n</body>')
 
 
 def create_parser():
@@ -61,7 +86,7 @@ def main(args):
         sys.exit(1)
 
     parsed_args = parser.parse_args(args)
-
+    read_urls(parsed_args.logfile)
     img_urls = read_urls(parsed_args.logfile)
 
     if parsed_args.todir:
